@@ -13,7 +13,7 @@ def root():
 @router.get("/health")
 def health_check():
     return {
-        "status": "healthy",
+        "status": "healthy beep booop :)",
         "service": "lanidrac-backend"
     }
 
