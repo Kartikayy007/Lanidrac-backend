@@ -5,7 +5,7 @@ router = APIRouter()
 @router.get("/")
 def root():
     return {
-        "status": "Lanidrac Backend Running",
+        "status": "Lanidrac Backend Running beep booop :)",
         "version": "1.0.0",
         "api_version": "v1"
     }
