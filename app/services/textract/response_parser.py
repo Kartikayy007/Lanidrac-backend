@@ -119,6 +119,20 @@ class TextractResponseParser:
 
         return checkboxes
 
+    def extract_text(self) -> str:
+        text_lines = []
+
+        line_blocks = [block for block in self.blocks if block.get('BlockType') == 'LINE']
+
+        for line_block in sorted(line_blocks, key=lambda b: (
+            b.get('Geometry', {}).get('BoundingBox', {}).get('Top', 0),
+            b.get('Geometry', {}).get('BoundingBox', {}).get('Left', 0)
+        )):
+            if 'Text' in line_block:
+                text_lines.append(line_block['Text'])
+
+        return '\n'.join(text_lines)
+
     def extract_bounding_boxes(self) -> List[Dict]:
         bboxes = []
 
@@ -137,6 +151,7 @@ class TextractResponseParser:
 
     def parse(self) -> Dict[str, Any]:
         return {
+            'text': self.extract_text(),
             'tables': self.extract_tables(),
             'forms': self.extract_forms(),
             'checkboxes': self.extract_checkboxes(),

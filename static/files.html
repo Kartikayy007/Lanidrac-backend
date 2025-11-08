@@ -19,14 +19,19 @@
         .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
         .status.uploaded { background: #d1ecf1; color: #0c5460; }
         .status.processing { background: #fff3cd; color: #856404; }
+        .status.textract_complete { background: #d4edda; color: #155724; }
         .status.completed { background: #d4edda; color: #155724; }
         .status.failed { background: #f8d7da; color: #721c24; }
+        .action-btn { padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .action-btn:hover { background: #0056b3; }
+        .action-btn:disabled { background: #ccc; cursor: not-allowed; }
         .empty-state { text-align: center; padding: 60px 20px; color: #666; }
         .empty-state a { color: #007bff; text-decoration: none; }
         .loading { text-align: center; padding: 40px; color: #666; }
         .error { color: red; padding: 20px; background: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
         .file-size { color: #666; font-size: 14px; }
         .date { color: #666; font-size: 14px; }
+        .files-table a:hover { text-decoration: underline !important; color: #007bff !important; }
     </style>
 </head>
 <body>
@@ -57,6 +62,7 @@
                     <th>Status</th>
                     <th>Uploaded</th>
                     <th>Job ID</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="filesBody">
@@ -118,12 +124,24 @@
                 } else {
                     filesTable.style.display = 'table';
                     filesBody.innerHTML = documents.map(doc => `
-                        <tr>
-                            <td><strong>${doc.original_filename}</strong></td>
+                        <tr id="row-${doc.job_id}">
+                            <td><strong><a href="details.html?id=${doc.job_id}" style="color: #333; text-decoration: none;">${doc.original_filename}</a></strong></td>
                             <td class="file-size">${formatFileSize(doc.file_size_bytes)}</td>
                             <td><span class="status ${doc.status}">${doc.status}</span></td>
                             <td class="date">${formatDate(doc.created_at)}</td>
                             <td><code style="font-size: 12px;">${doc.job_id}</code></td>
+                            <td>
+                                ${doc.status === 'uploaded' ?
+                                    `<button class="action-btn" onclick="processDocument('${doc.job_id}')">Process with Textract</button>` :
+                                    doc.status === 'processing' ?
+                                    `<button class="action-btn" disabled>Processing...</button>` :
+                                    doc.status === 'textract_complete' ?
+                                    `<span style="color: green; font-size: 12px;">✓ Complete</span> <a href="details.html?id=${doc.job_id}" style="margin-left: 10px; color: #007bff; text-decoration: none; font-size: 12px;">View →</a>` :
+                                    doc.status === 'failed' ?
+                                    `<span style="color: red; font-size: 12px;">✗ Failed</span>` :
+                                    ''
+                                }
+                            </td>
                         </tr>
                     `).join('');
                 }
@@ -131,6 +149,41 @@
                 loading.style.display = 'none';
                 errorDiv.style.display = 'block';
                 errorDiv.textContent = error.message;
+            }
+        }
+
+        async function processDocument(jobId) {
+            const token = localStorage.getItem('token');
+            const row = document.getElementById(`row-${jobId}`);
+
+            const statusCell = row.cells[2];
+            const actionCell = row.cells[5];
+
+            statusCell.innerHTML = '<span class="status processing">processing</span>';
+            actionCell.innerHTML = '<button class="action-btn" disabled>Processing...</button>';
+
+            try {
+                const response = await fetch(`${API_URL}/process/${jobId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusCell.innerHTML = `<span class="status ${data.status}">${data.status}</span>`;
+                    actionCell.innerHTML = `<span style="color: green; font-size: 12px;">✓ Complete (${data.pages_processed} pages)</span>`;
+                } else {
+                    statusCell.innerHTML = '<span class="status failed">failed</span>';
+                    actionCell.innerHTML = '<span style="color: red; font-size: 12px;">✗ Failed</span>';
+                    alert(`Processing failed: ${data.detail?.message || data.detail || 'Unknown error'}`);
+                }
+            } catch (error) {
+                statusCell.innerHTML = '<span class="status failed">failed</span>';
+                actionCell.innerHTML = '<span style="color: red; font-size: 12px;">✗ Error</span>';
+                alert(`Error: ${error.message}`);
             }
         }
 

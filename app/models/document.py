@@ -20,6 +20,7 @@ class Document(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
+    raw_text = Column(Text, nullable=True)
     markdown_output = Column(Text, nullable=True)
     json_output = Column(JSON, nullable=True)
     bbox_image_url = Column(Text, nullable=True)

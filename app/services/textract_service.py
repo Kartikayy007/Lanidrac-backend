@@ -73,17 +73,27 @@ class TextractService:
                     "error": error_msg
                 }
 
+            all_pages_text = []
+            for page in all_pages_data:
+                page_text = page['parsed_data'].get('text', '')
+                if page_text:
+                    all_pages_text.append(f"--- Page {page['page_number']} ---\n{page_text}")
+
+            full_text = '\n\n'.join(all_pages_text)
+
             aggregated_data = {
                 'total_pages': page_count,
                 'pages': all_pages_data,
                 'summary': {
                     'total_tables': sum(len(page['parsed_data']['tables']) for page in all_pages_data),
                     'total_forms': sum(len(page['parsed_data']['forms']) for page in all_pages_data),
-                    'total_checkboxes': sum(len(page['parsed_data']['checkboxes']) for page in all_pages_data)
+                    'total_checkboxes': sum(len(page['parsed_data']['checkboxes']) for page in all_pages_data),
+                    'total_text_length': len(full_text)
                 }
             }
 
             document.textract_response = aggregated_data
+            document.raw_text = full_text
             self._update_status(document, "textract_complete")
 
             return {

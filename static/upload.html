@@ -138,8 +138,12 @@
                     messageDiv.innerHTML = `<div class="success">
                         <strong>Upload Successful!</strong><br>
                         Job ID: ${data.job_id}<br>
-                        <a href="files.html">View all files</a>
+                        Starting Textract processing...
                     </div>`;
+
+                    uploadBtn.textContent = 'Processing with Textract...';
+
+                    await processDocument(data.job_id, token, messageDiv);
 
                     selectedFile = null;
                     document.getElementById('fileInput').value = '';
@@ -160,6 +164,44 @@
             }
 
             uploadBtn.textContent = 'Upload Document';
+        }
+
+        async function processDocument(jobId, token, messageDiv) {
+            try {
+                const response = await fetch(`${API_URL}/process/${jobId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageDiv.innerHTML = `<div class="success">
+                        <strong>Processing Complete!</strong><br>
+                        Job ID: ${jobId}<br>
+                        Status: ${data.status}<br>
+                        Pages Processed: ${data.pages_processed}<br>
+                        Tables: ${data.summary.total_tables} | Forms: ${data.summary.total_forms} | Checkboxes: ${data.summary.total_checkboxes}<br>
+                        Text Extracted: ${data.summary.total_text_length} characters<br>
+                        <a href="files.html">View all files</a>
+                    </div>`;
+                } else {
+                    messageDiv.innerHTML = `<div class="error">
+                        <strong>Textract Processing Failed</strong><br>
+                        Job ID: ${jobId}<br>
+                        ${data.detail?.message || data.detail || 'Unknown error'}<br>
+                        <a href="files.html">View all files</a>
+                    </div>`;
+                }
+            } catch (error) {
+                messageDiv.innerHTML = `<div class="error">
+                    <strong>Textract Processing Failed</strong><br>
+                    ${error.message}<br>
+                    <a href="files.html">View all files</a>
+                </div>`;
+            }
         }
 
         checkAuth();
