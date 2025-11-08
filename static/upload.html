@@ -185,7 +185,8 @@
                         Pages Processed: ${data.pages_processed}<br>
                         Tables: ${data.summary.total_tables} | Forms: ${data.summary.total_forms} | Checkboxes: ${data.summary.total_checkboxes}<br>
                         Text Extracted: ${data.summary.total_text_length} characters<br>
-                        <a href="files.html">View all files</a>
+                        <strong style="color: #28a745;">✓ Markdown generated</strong><br>
+                        <a href="details.html?id=${jobId}">View Details</a> | <a href="files.html">View All Files</a>
                     </div>`;
                 } else {
                     messageDiv.innerHTML = `<div class="error">

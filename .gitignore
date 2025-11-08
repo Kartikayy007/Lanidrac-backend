@@ -10,3 +10,4 @@ outputs/
 /.idea/
 /node_modules/
 *.pyc
+.DS_Store

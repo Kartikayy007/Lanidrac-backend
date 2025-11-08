@@ -6,6 +6,7 @@ from app.models import Document
 from app.services.textract.textract_client import TextractClient
 from app.services.textract.document_processor import DocumentProcessor
 from app.services.textract.response_parser import TextractResponseParser
+from app.services.markdown.markdown_converter import MarkdownConverter
 
 class TextractService:
     def __init__(self, db: Session):
@@ -74,12 +75,23 @@ class TextractService:
                 }
 
             all_pages_text = []
+            all_pages_markdown = []
+
             for page in all_pages_data:
                 page_text = page['parsed_data'].get('text', '')
                 if page_text:
                     all_pages_text.append(f"--- Page {page['page_number']} ---\n{page_text}")
 
+                converter = MarkdownConverter(
+                    parsed_data=page['parsed_data'],
+                    page_number=page['page_number']
+                )
+                page_markdown = converter.convert()
+                if page_markdown:
+                    all_pages_markdown.append(page_markdown)
+
             full_text = '\n\n'.join(all_pages_text)
+            full_markdown = '\n\n---\n\n'.join(all_pages_markdown)
 
             aggregated_data = {
                 'total_pages': page_count,
@@ -94,6 +106,7 @@ class TextractService:
 
             document.textract_response = aggregated_data
             document.raw_text = full_text
+            document.markdown_output = full_markdown
             self._update_status(document, "textract_complete")
 
             return {

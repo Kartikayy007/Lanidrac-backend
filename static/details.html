@@ -101,6 +101,9 @@
                 <button class="tab" onclick="switchTab('markdown')">Markdown</button>
                 <button class="tab" onclick="switchTab('json')">JSON Output</button>
                 <button class="tab" onclick="switchTab('textract')">Textract Response</button>
+                <button class="tab" onclick="downloadMarkdown()" style="margin-left: auto; background: #28a745; color: white;" id="downloadBtn">
+                    ⬇ Download .md
+                </button>
             </div>
 
             <div id="raw-text" class="tab-content active">
@@ -203,9 +206,16 @@
                 }
 
                 if (doc.markdown_output) {
-                    document.getElementById('markdownContent').innerHTML = doc.markdown_output;
+                    const escapedMarkdown = doc.markdown_output
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                    document.getElementById('markdownContent').innerHTML =
+                        `<pre style="white-space: pre-wrap; font-family: monospace; margin: 0;">${escapedMarkdown}</pre>`;
+                    document.getElementById('downloadBtn').disabled = false;
                 } else {
                     document.getElementById('markdownContent').innerHTML = '<div class="empty">No markdown output available</div>';
+                    document.getElementById('downloadBtn').disabled = true;
                 }
 
                 if (doc.json_output) {
@@ -227,6 +237,27 @@
                 document.getElementById('error').textContent = error.message;
                 document.getElementById('error').style.display = 'block';
                 document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        async function downloadMarkdown() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`${API_URL}/download/${jobId}/markdown`, {
+                    headers: {'Authorization': `Bearer ${token}`}
+                });
+
+                if (!response.ok) throw new Error('Download failed');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${jobId}.md`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('Download failed: ' + error.message);
             }
         }
 
