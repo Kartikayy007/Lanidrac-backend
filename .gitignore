@@ -9,3 +9,4 @@ outputs/
 /app/generated/prisma
 /.idea/
 /node_modules/
+*.pyc

@@ -5,6 +5,7 @@ from app.core.database import get_db
 from app.core.auth import get_current_user
 from app.schemas import UploadResponse, DocumentStatus, DocumentResponse
 from app.services.upload_service import UploadService
+from app.services.textract_service import TextractService
 
 router = APIRouter()
 
@@ -16,6 +17,15 @@ async def upload_document(
 ):
     service = UploadService(db)
     return await service.upload_document(file, user_id)
+
+@router.post("/process/{job_id}")
+async def process_document(
+    job_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    textract_service = TextractService(db)
+    return textract_service.process_document(job_id, user_id)
 
 @router.get("/status/{job_id}", response_model=DocumentStatus)
 async def get_document_status(
