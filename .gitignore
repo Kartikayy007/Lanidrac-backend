@@ -6,3 +6,6 @@
 *.pem
 uploads/
 outputs/
+/app/generated/prisma
+/.idea/
+/node_modules/

@@ -1,0 +1,24 @@
+{
+  "name": "lanidrac-backend",
+  "version": "1.0.0",
+  "description": "``` Lanidrac-backend/ ├── app/                      # Application package │   ├── api/                 # API endpoints │   │   └── v1/              # API version 1 │   │       ├── endpoints/   # Route handlers │   │       │   ├── health.py │   │       │   └── upload.py │   │       └── api.py       # Main API router │   ├── core/                # Core configuration │   │   ├── config.py        # Settings and configuration │   │   └── database.py      # Database setup │   ├── models/              # SQLAlchemy models │   │   └── document.py      # Document model │   ├── schemas/             # Pydantic schemas │   │   └── document.py      # Request/Response models │   ├── services/            # Business logic │   │   └── upload_service.py │   └── utils/               # Utilities │       └── file_utils.py    # File handling utilities ├── uploads/                 # Uploaded files directory ├── main.py                  # Application entry point ├── docker-compose.yml       # PostgreSQL setup ├── Dockerfile               # Container configuration └── requirements.txt         # Python dependencies ```",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kartikayy007/Lanidrac-backend.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Kartikayy007/Lanidrac-backend/issues"
+  },
+  "homepage": "https://github.com/Kartikayy007/Lanidrac-backend#readme",
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  }
+}

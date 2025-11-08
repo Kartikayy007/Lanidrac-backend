@@ -1,0 +1,30 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model documents {
+  id                String    @id @db.Uuid
+  job_id            String    @unique(map: "ix_documents_job_id") @db.VarChar(50)
+  filename          String    @db.VarChar(255)
+  original_filename String    @db.VarChar(255)
+  file_path         String
+  file_size_bytes   Int
+  mime_type         String    @db.VarChar(100)
+  status            String    @db.VarChar(50)
+  created_at        DateTime? @db.Timestamptz(6)
+  updated_at        DateTime? @db.Timestamptz(6)
+  markdown_output   String?
+  json_output       String?
+  bbox_image_url    String?
+  textract_response String?
+  gemini_response   String?
+  error_message     String?
+
+  @@index([created_at], map: "ix_documents_created_at")
+  @@index([status], map: "ix_documents_status")
+}

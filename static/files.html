@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Files - Lanidrac</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial; background: #f5f5f5; padding: 20px; }
+        .nav { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav h2 { margin: 0; }
+        .nav-links { display: flex; gap: 20px; align-items: center; }
+        .nav a { color: #007bff; text-decoration: none; }
+        .nav button { padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 30px; }
+        .files-table { width: 100%; border-collapse: collapse; }
+        .files-table th { background: #f8f9fa; padding: 12px; text-align: left; border-bottom: 2px solid #dee2e6; }
+        .files-table td { padding: 12px; border-bottom: 1px solid #dee2e6; }
+        .files-table tr:hover { background: #f8f9fa; }
+        .status { padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        .status.uploaded { background: #d1ecf1; color: #0c5460; }
+        .status.processing { background: #fff3cd; color: #856404; }
+        .status.completed { background: #d4edda; color: #155724; }
+        .status.failed { background: #f8d7da; color: #721c24; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #666; }
+        .empty-state a { color: #007bff; text-decoration: none; }
+        .loading { text-align: center; padding: 40px; color: #666; }
+        .error { color: red; padding: 20px; background: #f8d7da; border-radius: 4px; margin-bottom: 20px; }
+        .file-size { color: #666; font-size: 14px; }
+        .date { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <h2>Lanidrac OCR</h2>
+        <div class="nav-links">
+            <a href="upload.html">Upload File</a>
+            <button onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>My Documents</h1>
+
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="loading" class="loading">Loading documents...</div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h3>No documents yet</h3>
+            <p>Upload your first document to get started</p>
+            <p><a href="upload.html">Upload Document</a></p>
+        </div>
+
+        <table id="filesTable" class="files-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Uploaded</th>
+                    <th>Job ID</th>
+                </tr>
+            </thead>
+            <tbody id="filesBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api/v1/documents';
+
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString();
+        }
+
+        async function loadDocuments() {
+            const token = localStorage.getItem('token');
+            const loading = document.getElementById('loading');
+            const emptyState = document.getElementById('emptyState');
+            const filesTable = document.getElementById('filesTable');
+            const filesBody = document.getElementById('filesBody');
+            const errorDiv = document.getElementById('error');
+
+            try {
+                const response = await fetch(`${API_URL}/list`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load documents');
+                }
+
+                const documents = await response.json();
+
+                loading.style.display = 'none';
+
+                if (documents.length === 0) {
+                    emptyState.style.display = 'block';
+                } else {
+                    filesTable.style.display = 'table';
+                    filesBody.innerHTML = documents.map(doc => `
+                        <tr>
+                            <td><strong>${doc.original_filename}</strong></td>
+                            <td class="file-size">${formatFileSize(doc.file_size_bytes)}</td>
+                            <td><span class="status ${doc.status}">${doc.status}</span></td>
+                            <td class="date">${formatDate(doc.created_at)}</td>
+                            <td><code style="font-size: 12px;">${doc.job_id}</code></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                errorDiv.style.display = 'block';
+                errorDiv.textContent = error.message;
+            }
+        }
+
+        checkAuth();
+        loadDocuments();
+    </script>
+</body>
+</html>
