@@ -33,6 +33,15 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
 
     GEMINI_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-2.5-pro"
+    ENABLE_GEMINI_REFINEMENT: bool = True
+    GEMINI_MAX_FILE_SIZE_MB: int = 5
+    GEMINI_MAX_PAGES: int = 5
+    GEMINI_TIMEOUT_SECONDS: int = 90
+
+    FAST_MODE_ENABLED: bool = True
+    SMART_MODE_ENABLED: bool = True
+    SMART_MODE_DEFAULT: bool = False
 
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""

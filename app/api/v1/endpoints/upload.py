@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
@@ -22,11 +22,12 @@ async def upload_document(
 @router.post("/process/{job_id}")
 async def process_document(
     job_id: str,
+    mode: str = Query(default="fast", regex="^(fast|smart)$"),
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     textract_service = TextractService(db)
-    return textract_service.process_document(job_id, user_id)
+    return textract_service.process_document(job_id, user_id, mode)
 
 @router.get("/status/{job_id}", response_model=DocumentStatus)
 async def get_document_status(

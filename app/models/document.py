@@ -17,6 +17,7 @@ class Document(Base):
     file_size_bytes = Column(Integer, nullable=False)
     mime_type = Column(String(100), nullable=False)
     status = Column(String(50), nullable=False, default="uploaded", index=True)
+    processing_mode = Column(String(10), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

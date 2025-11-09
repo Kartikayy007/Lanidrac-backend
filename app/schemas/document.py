@@ -39,6 +39,7 @@ class DocumentResponse(BaseModel):
     file_size_bytes: int
     mime_type: str
     status: str
+    processing_mode: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     markdown_output: Optional[str] = None
