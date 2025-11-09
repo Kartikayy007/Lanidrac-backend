@@ -45,6 +45,16 @@
 
         <div id="fileInfo" class="file-info" style="display: none;"></div>
 
+        <div style="margin: 20px 0; text-align: center;">
+            <label for="processingMode" style="display: block; margin-bottom: 10px; font-weight: 600; color: #333;">
+                Processing Mode:
+            </label>
+            <select id="processingMode" style="padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; cursor: pointer;">
+                <option value="fast" selected>⚡ Fast Mode - Textract only (3-5 sec, $0.0015/page)</option>
+                <option value="smart">🧠 Smart Mode - Textract + Gemini (8-12 sec, $0.004/page)</option>
+            </select>
+        </div>
+
         <button id="uploadBtn" onclick="uploadFile()" disabled>Upload Document</button>
 
         <div id="message"></div>
@@ -168,7 +178,8 @@
 
         async function processDocument(jobId, token, messageDiv) {
             try {
-                const response = await fetch(`${API_URL}/process/${jobId}`, {
+                const mode = document.getElementById('processingMode').value;
+                const response = await fetch(`${API_URL}/process/${jobId}?mode=${mode}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

@@ -95,3 +95,31 @@ async def download_markdown(
         media_type="text/markdown",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/download/{job_id}/json")
+async def download_json(
+    job_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    service = UploadService(db)
+    document = service.get_document(job_id, user_id)
+
+    if not document.json_output:
+        raise HTTPException(
+            status_code=404,
+            detail={
+                "error": "JsonNotAvailable",
+                "message": "No extracted JSON data available. Please run extraction first."
+            }
+        )
+
+    import json
+    filename = f"{document.original_filename.rsplit('.', 1)[0]}.json"
+    json_content = json.dumps(document.json_output, indent=2)
+
+    return Response(
+        content=json_content,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

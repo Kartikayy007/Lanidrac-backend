@@ -153,6 +153,13 @@
         }
 
         async function processDocument(jobId) {
+            const mode = prompt('Choose processing mode:\n\nEnter "fast" for Fast Mode (Textract only, 3-5s)\nEnter "smart" for Smart Mode (Textract + Gemini, 8-12s)', 'fast');
+
+            if (!mode || (mode !== 'fast' && mode !== 'smart')) {
+                alert('Invalid mode. Please choose "fast" or "smart"');
+                return;
+            }
+
             const token = localStorage.getItem('token');
             const row = document.getElementById(`row-${jobId}`);
 
@@ -163,7 +170,7 @@
             actionCell.innerHTML = '<button class="action-btn" disabled>Processing...</button>';
 
             try {
-                const response = await fetch(`${API_URL}/process/${jobId}`, {
+                const response = await fetch(`${API_URL}/process/${jobId}?mode=${mode}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`

@@ -145,6 +145,7 @@
                 <button class="tab" onclick="switchTab('json')">JSON Output</button>
                 <button class="tab" onclick="switchTab('textract')">Textract Response</button>
                 <button class="tab" id="geminiTab" onclick="switchTab('gemini')" style="display: none;">Gemini Validation</button>
+                <button class="tab" onclick="switchTab('extract')">Extract Data</button>
                 <button class="tab" onclick="downloadMarkdown()" style="margin-left: auto; background: #28a745; color: white;" id="downloadBtn">
                     ⬇ Download .md
                 </button>
@@ -175,6 +176,66 @@
                     </summary>
                     <div class="json-content" id="geminiContent" style="margin-top: 10px;"></div>
                 </details>
+            </div>
+
+            <div id="extract" class="tab-content">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="margin-bottom: 10px;">📝 JSON Schema</h3>
+                        <p style="font-size: 13px; color: #666; margin-bottom: 10px;">
+                            Define your extraction schema using JSON. Supported types: string, number, date, boolean, array, object
+                        </p>
+                        <textarea id="schemaInput" style="width: 100%; height: 400px; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; border: 1px solid #ddd; border-radius: 4px; padding: 10px;" placeholder='{
+  "invoice_number": "string",
+  "date": "date",
+  "vendor": {
+    "name": "string",
+    "address": "string"
+  },
+  "items": [{
+    "description": "string",
+    "quantity": "number",
+    "price": "number"
+  }],
+  "total": "number"
+}'>{
+  "restaurant_name": "string",
+  "date": "date",
+  "items": [{
+    "name": "string",
+    "price": "number"
+  }],
+  "subtotal": "number",
+  "tax": "number",
+  "total": "number"
+}</textarea>
+                        <div style="margin-top: 10px; display: flex; gap: 10px;">
+                            <button onclick="extractData()" style="background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">
+                                🚀 Extract Data
+                            </button>
+                            <select id="schemaExamples" onchange="loadSchemaExample(this.value)" style="padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <option value="">Load Example Schema...</option>
+                                <option value="invoice">Invoice</option>
+                                <option value="receipt">Receipt</option>
+                                <option value="medical">Medical Form</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 10px;">📤 Extracted Data</h3>
+                        <div id="extractionStatus" style="padding: 10px; margin-bottom: 10px; border-radius: 4px; display: none;"></div>
+                        <div id="extractedResult" style="width: 100%; height: 400px; overflow: auto; border: 1px solid #ddd; border-radius: 4px; padding: 10px; font-family: 'Monaco', 'Courier New', monospace; font-size: 13px; background: #f8f9fa;">
+                            <div style="color: #999; text-align: center; padding: 50px;">
+                                Extracted data will appear here
+                            </div>
+                        </div>
+                        <div style="margin-top: 10px;">
+                            <button id="downloadJsonBtn" onclick="downloadExtractedJson()" style="background: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; display: none;">
+                                ⬇ Download JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -501,6 +562,151 @@
                 a.download = `${jobId}.md`;
                 a.click();
                 window.URL.revokeObjectURL(url);
+            } catch (error) {
+                alert('Download failed: ' + error.message);
+            }
+        }
+
+        let extractedJsonData = null;
+
+        function loadSchemaExample(type) {
+            const examples = {
+                invoice: {
+                    "invoice_number": "string",
+                    "date": "date",
+                    "vendor": {
+                        "name": "string",
+                        "address": "string"
+                    },
+                    "items": [{
+                        "description": "string",
+                        "quantity": "number",
+                        "price": "number"
+                    }],
+                    "subtotal": "number",
+                    "tax": "number",
+                    "total": "number"
+                },
+                receipt: {
+                    "restaurant_name": "string",
+                    "date": "date",
+                    "time": "string",
+                    "items": [{
+                        "name": "string",
+                        "price": "number"
+                    }],
+                    "subtotal": "number",
+                    "tax": "number",
+                    "tip": "number",
+                    "total": "number"
+                },
+                medical: {
+                    "patient": {
+                        "name": "string",
+                        "date_of_birth": "date",
+                        "gender": "string"
+                    },
+                    "symptoms": [{
+                        "symptom": "string",
+                        "severity": "string"
+                    }],
+                    "medications": [{
+                        "name": "string",
+                        "dosage": "string"
+                    }],
+                    "allergies": ["string"],
+                    "insurance": {
+                        "provider": "string",
+                        "policy_number": "string"
+                    }
+                }
+            };
+
+            if (type && examples[type]) {
+                document.getElementById('schemaInput').value = JSON.stringify(examples[type], null, 2);
+            }
+        }
+
+        async function extractData() {
+            const schemaInput = document.getElementById('schemaInput').value;
+            const statusDiv = document.getElementById('extractionStatus');
+            const resultDiv = document.getElementById('extractedResult');
+
+            try {
+                const schema = JSON.parse(schemaInput);
+
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#d4edda';
+                statusDiv.style.color = '#155724';
+                statusDiv.innerHTML = '⏳ Extracting data...';
+
+                const response = await fetch(`${API_URL}/extract/${jobId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify({ schema })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail?.message || error.detail || 'Extraction failed');
+                }
+
+                const result = await response.json();
+                extractedJsonData = result.extracted_data;
+
+                resultDiv.innerHTML = `
+                    <div style="margin-bottom: 10px; padding: 10px; background: #d4edda; border-radius: 4px;">
+                        <strong>✅ Extraction Successful</strong><br>
+                        Confidence: ${(result.confidence * 100).toFixed(1)}%
+                    </div>
+                    <pre>${JSON.stringify(result.extracted_data, null, 2)}</pre>
+                `;
+
+                document.getElementById('downloadJsonBtn').style.display = 'inline-block';
+                statusDiv.style.display = 'none';
+
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.style.background = '#f8d7da';
+                statusDiv.style.color = '#721c24';
+                statusDiv.innerHTML = `❌ Error: ${error.message}`;
+
+                if (error.message.includes('JSON')) {
+                    statusDiv.innerHTML += '<br>Please check your schema syntax';
+                }
+            }
+        }
+
+        async function downloadExtractedJson() {
+            if (!extractedJsonData) {
+                alert('No extracted data to download');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/download/${jobId}/json`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Download failed');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${jobId}.json`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
             } catch (error) {
                 alert('Download failed: ' + error.message);
             }
