@@ -61,7 +61,9 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     markdown_output: Optional[str] = None
-    json_output: Optional[str] = None
+    json_output: Optional[dict] = None
+    textract_response: Optional[dict] = None
+    gemini_response: Optional[dict] = None
     bbox_image_url: Optional[str] = None
     error_message: Optional[str] = None
 
