@@ -31,6 +31,23 @@ class DocumentStatus(BaseModel):
     class Config:
         from_attributes = True
 
+class DocumentListItem(BaseModel):
+    """Lightweight response model for document listing - excludes heavy fields"""
+    id: UUID
+    job_id: str
+    user_id: str
+    status: str
+    processing_mode: Optional[str] = None
+    filename: str
+    original_filename: str
+    file_size_bytes: int
+    created_at: datetime
+    updated_at: datetime
+    error_message: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 class DocumentResponse(BaseModel):
     id: UUID
     job_id: str

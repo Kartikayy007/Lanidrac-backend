@@ -1,10 +1,11 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from typing import List
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
-from app.schemas import UploadResponse, DocumentStatus, DocumentResponse
+from app.schemas import UploadResponse, DocumentStatus, DocumentResponse, DocumentListItem
 from app.services.upload_service import UploadService
 from app.services.textract_service import TextractService
 
@@ -47,11 +48,12 @@ async def get_document(
     service = UploadService(db)
     return service.get_document(job_id, user_id)
 
-@router.get("/list")
+@router.get("/list", response_model=List[DocumentListItem])
 async def list_documents(
     user_id: str = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
+    """Get list of user documents with optimized lightweight response"""
     service = UploadService(db)
     return service.list_documents(user_id)
 

@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from fastapi import UploadFile, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, load_only
 
 from app.models import Document
 from app.schemas import UploadResponse, DocumentStatus, DocumentResponse
@@ -119,7 +119,22 @@ class UploadService:
             self.db.commit()
 
     def list_documents(self, user_id: str):
-        documents = self.db.query(Document).filter(
+        """Get list of documents with only essential fields (optimized for performance)"""
+        documents = self.db.query(Document).options(
+            load_only(
+                Document.id,
+                Document.job_id,
+                Document.user_id,
+                Document.status,
+                Document.processing_mode,
+                Document.filename,
+                Document.original_filename,
+                Document.file_size_bytes,
+                Document.created_at,
+                Document.updated_at,
+                Document.error_message
+            )
+        ).filter(
             Document.user_id == user_id
         ).order_by(Document.created_at.desc()).all()
         return documents
