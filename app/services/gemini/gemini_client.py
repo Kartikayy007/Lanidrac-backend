@@ -1,7 +1,25 @@
 import google.generativeai as genai
 import base64
+import signal
 from typing import Dict, Any
+from contextlib import contextmanager
 from app.core.config import settings
+
+class TimeoutException(Exception):
+    pass
+
+@contextmanager
+def timeout_handler(seconds):
+    def _timeout_handler(signum, frame):
+        raise TimeoutException(f"Operation timed out after {seconds} seconds")
+
+    original_handler = signal.signal(signal.SIGALRM, _timeout_handler)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original_handler)
 
 class GeminiClient:
     def __init__(self):
@@ -21,14 +39,24 @@ class GeminiClient:
                 "data": image_bytes
             }
 
-            response = self.model.generate_content(
-                [prompt, image_part]
-            )
+            with timeout_handler(self.timeout):
+                response = self.model.generate_content(
+                    [prompt, image_part],
+                    request_options={"timeout": self.timeout}
+                )
 
             return response.text
 
+        except TimeoutException:
+            raise Exception(f"AI refinement timeout. Document may be too complex. Please try a smaller file.")
         except Exception as e:
-            raise Exception(f"Gemini API error: {str(e)}")
+            error_msg = str(e).lower()
+            if 'quota' in error_msg or 'rate' in error_msg:
+                raise Exception("AI service quota exceeded. Using standard OCR.")
+            elif 'api key' in error_msg:
+                raise Exception("AI service configuration error. Using standard OCR.")
+            else:
+                raise Exception(f"AI refinement failed: {str(e)}")
 
     def generate_with_markdown(
         self,
@@ -45,11 +73,21 @@ class GeminiClient:
 
             full_prompt = f"{prompt}\n\nCurrent Markdown:\n```markdown\n{markdown}\n```"
 
-            response = self.model.generate_content(
-                [full_prompt, image_part]
-            )
+            with timeout_handler(self.timeout):
+                response = self.model.generate_content(
+                    [full_prompt, image_part],
+                    request_options={"timeout": self.timeout}
+                )
 
             return response.text
 
+        except TimeoutException:
+            raise Exception(f"AI refinement timeout. Document may be too complex. Please try a smaller file.")
         except Exception as e:
-            raise Exception(f"Gemini API error: {str(e)}")
+            error_msg = str(e).lower()
+            if 'quota' in error_msg or 'rate' in error_msg:
+                raise Exception("AI service quota exceeded. Using standard OCR.")
+            elif 'api key' in error_msg:
+                raise Exception("AI service configuration error. Using standard OCR.")
+            else:
+                raise Exception(f"AI refinement failed: {str(e)}")
