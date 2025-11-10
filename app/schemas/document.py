@@ -1,7 +1,8 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 from uuid import UUID
+import json
 
 class DocumentBase(BaseModel):
     filename: str
@@ -61,11 +62,21 @@ class DocumentResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     markdown_output: Optional[str] = None
-    json_output: Optional[dict] = None
-    textract_response: Optional[dict] = None
-    gemini_response: Optional[dict] = None
+    json_output: Optional[Union[dict, str]] = None
+    textract_response: Optional[Union[dict, str]] = None
+    gemini_response: Optional[Union[dict, str]] = None
     bbox_image_url: Optional[str] = None
     error_message: Optional[str] = None
+
+    @field_validator('json_output', 'textract_response', 'gemini_response', mode='before')
+    @classmethod
+    def parse_json_string(cls, v):
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return v
+        return v
 
     class Config:
         from_attributes = True
