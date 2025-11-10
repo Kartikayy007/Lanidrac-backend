@@ -14,6 +14,7 @@ class UploadResponse(BaseModel):
     file_size_bytes: int
     mime_type: str
     status: str
+    processing_mode: Optional[str] = None
     created_at: datetime
     message: str = "File uploaded successfully"
 

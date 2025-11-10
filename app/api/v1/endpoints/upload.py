@@ -1,7 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from app.core.database import get_db
 from app.core.auth import get_current_user
@@ -14,11 +14,26 @@ router = APIRouter()
 @router.post("/upload", response_model=UploadResponse)
 async def upload_document(
     file: UploadFile = File(...),
+    mode: Optional[str] = Query(None, regex="^(fast|smart)$"),
     user_id: str = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     service = UploadService(db)
-    return await service.upload_document(file, user_id)
+    result = await service.upload_document(file, user_id)
+
+    if mode:
+        background_tasks.add_task(
+            TextractService(db).process_document,
+            result.job_id,
+            user_id,
+            mode
+        )
+        result.status = "processing"
+        result.processing_mode = mode
+        result.message = "File uploaded and processing started"
+
+    return result
 
 @router.post("/process/{job_id}")
 async def process_document(

@@ -136,5 +136,5 @@ class UploadService:
             )
         ).filter(
             Document.user_id == user_id
-        ).order_by(Document.created_at.desc()).all()
+        ).order_by(Document.created_at.desc()).limit(5).all()
         return documents
