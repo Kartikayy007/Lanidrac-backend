@@ -1,5 +1,7 @@
 import io
 import os
+import tempfile
+import requests
 from typing import List, Tuple
 from PIL import Image
 from pdf2image import convert_from_path
@@ -47,26 +49,57 @@ class DocumentProcessor:
             raise Exception(f"Failed to convert image to bytes: {str(e)}")
 
     @staticmethod
+    def download_from_url(url: str) -> str:
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+
+            _, ext = os.path.splitext(url.split('?')[0])
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
+            temp_file.write(response.content)
+            temp_file.close()
+
+            return temp_file.name
+        except Exception as e:
+            raise Exception(f"Failed to download file from URL: {str(e)}")
+
+    @staticmethod
     def process_document(file_path: str) -> Tuple[List[bytes], int]:
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"File not found: {file_path}")
+        temp_file = None
+        is_url = file_path.startswith('http://') or file_path.startswith('https://')
 
-        image_bytes_list = []
+        try:
+            if is_url:
+                temp_file = DocumentProcessor.download_from_url(file_path)
+                local_path = temp_file
+            else:
+                if not os.path.exists(file_path):
+                    raise FileNotFoundError(f"File not found: {file_path}")
+                local_path = file_path
 
-        if DocumentProcessor.is_pdf(file_path):
-            images = DocumentProcessor.convert_pdf_to_images(file_path)
-            for image in images:
+            image_bytes_list = []
+
+            if DocumentProcessor.is_pdf(local_path):
+                images = DocumentProcessor.convert_pdf_to_images(local_path)
+                for image in images:
+                    image_bytes = DocumentProcessor.image_to_bytes(image)
+                    image_bytes_list.append(image_bytes)
+                page_count = len(images)
+
+            elif DocumentProcessor.is_image(local_path):
+                image = DocumentProcessor.load_image(local_path)
                 image_bytes = DocumentProcessor.image_to_bytes(image)
                 image_bytes_list.append(image_bytes)
-            page_count = len(images)
+                page_count = 1
 
-        elif DocumentProcessor.is_image(file_path):
-            image = DocumentProcessor.load_image(file_path)
-            image_bytes = DocumentProcessor.image_to_bytes(image)
-            image_bytes_list.append(image_bytes)
-            page_count = 1
+            else:
+                raise ValueError(f"Unsupported file format. Supported: PDF, {', '.join(DocumentProcessor.SUPPORTED_IMAGE_FORMATS)}")
 
-        else:
-            raise ValueError(f"Unsupported file format. Supported: PDF, {', '.join(DocumentProcessor.SUPPORTED_IMAGE_FORMATS)}")
+            return image_bytes_list, page_count
 
-        return image_bytes_list, page_count
+        finally:
+            if temp_file and os.path.exists(temp_file):
+                try:
+                    os.unlink(temp_file)
+                except Exception:
+                    pass
