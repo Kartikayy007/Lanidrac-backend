@@ -61,6 +61,7 @@ class DocumentResponse(BaseModel):
     processing_mode: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    file_path: Optional[str] = None
     markdown_output: Optional[str] = None
     json_output: Optional[Union[dict, str]] = None
     textract_response: Optional[Union[dict, str]] = None
