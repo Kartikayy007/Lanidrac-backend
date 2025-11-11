@@ -7,7 +7,13 @@ from app.core.config import settings
 
 class S3Service:
     def __init__(self):
-        self.s3_client = boto3.client('s3', region_name=settings.S3_REGION)
+        kwargs = {'region_name': settings.S3_REGION}
+
+        if settings.S3_ACCESS_KEY_ID and settings.S3_SECRET_ACCESS_KEY:
+            kwargs['aws_access_key_id'] = settings.S3_ACCESS_KEY_ID
+            kwargs['aws_secret_access_key'] = settings.S3_SECRET_ACCESS_KEY
+
+        self.s3_client = boto3.client('s3', **kwargs)
         self.bucket_name = settings.S3_BUCKET_NAME
 
     def upload_file(self, file_path: str, s3_key: str, content_type: str) -> str:
