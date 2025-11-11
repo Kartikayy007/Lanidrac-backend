@@ -34,6 +34,8 @@ class Settings(BaseSettings):
 
     S3_BUCKET_NAME: str = ""
     S3_REGION: str = "eu-north-1"
+    S3_ACCESS_KEY_ID: str = ""
+    S3_SECRET_ACCESS_KEY: str = ""
 
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-pro"
