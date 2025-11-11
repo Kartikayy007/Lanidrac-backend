@@ -72,6 +72,24 @@ async def list_documents(
     service = UploadService(db)
     return service.list_documents(user_id)
 
+@router.get("/image/{job_id}")
+async def get_document_image(
+    job_id: str,
+    user_id: str = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get the uploaded document image URL"""
+    service = UploadService(db)
+    document = service.get_document(job_id, user_id)
+
+    if not document.file_path:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": "ImageNotFound", "message": "Document file not found"}
+        )
+
+    return {"url": document.file_path}
+
 @router.get("/markdown/{job_id}")
 async def get_markdown(
     job_id: str,

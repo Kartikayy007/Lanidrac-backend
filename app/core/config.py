@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = ""
     AWS_REGION: str = "us-east-1"
 
+    S3_BUCKET_NAME: str = ""
+    S3_REGION: str = "eu-north-1"
+
     GEMINI_API_KEY: str = ""
     GEMINI_MODEL: str = "gemini-2.5-pro"
     ENABLE_GEMINI_REFINEMENT: bool = True

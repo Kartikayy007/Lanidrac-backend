@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session, load_only
 from app.models import Document
 from app.schemas import UploadResponse, DocumentStatus, DocumentResponse
 from app.core.config import settings
+from app.services.s3_service import S3Service
 from app.utils.file_utils import (
     generate_job_id,
     generate_safe_filename,
@@ -32,12 +33,27 @@ class UploadService:
 
             file_size = os.path.getsize(file_path)
 
+            s3_url = None
+            if settings.S3_BUCKET_NAME:
+                try:
+                    s3_service = S3Service()
+                    s3_key = f"uploads/{user_id}/{safe_filename}"
+                    s3_url = s3_service.upload_file(file_path, s3_key, file.content_type)
+                    print(f"✅ S3 upload successful: {s3_url}")
+
+                    try:
+                        os.remove(file_path)
+                    except Exception as cleanup_error:
+                        print(f"⚠️ Failed to delete local file: {cleanup_error}")
+                except Exception as s3_error:
+                    print(f"⚠️ S3 upload failed (file saved locally): {str(s3_error)}")
+
             document = Document(
                 job_id=job_id,
                 user_id=user_id,
                 filename=safe_filename,
                 original_filename=file.filename,
-                file_path=file_path,
+                file_path=s3_url if s3_url else file_path,
                 file_size_bytes=file_size,
                 mime_type=file.content_type,
                 status="uploaded"
